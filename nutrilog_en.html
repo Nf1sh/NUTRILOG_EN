@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NutriLog</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap');
+:root{--bg:#0e0f0f;--surface:#161717;--surface2:#1e2020;--border:#2a2d2d;--accent:#c8f542;--accent2:#42f5c8;--accent3:#f5a742;--accent4:#f542a7;--text:#e8eaea;--muted:#6b7070;--danger:#f54242}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;overflow-x:hidden}
+header{padding:0 40px;display:flex;align-items:center;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:100}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--accent);letter-spacing:-.5px;margin-right:28px;white-space:nowrap;padding:18px 0}
+.logo span{color:var(--text)}
+nav{display:flex;flex:1}
+.tab-btn{background:none;border:none;color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;padding:18px 16px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.hdr-actions{display:flex;gap:8px;align-items:center;margin-left:auto;padding-left:16px}
+.btn-save{font-family:'DM Mono',monospace;font-size:11px;padding:8px 16px;background:var(--accent);color:#0e0f0f;border:none;cursor:pointer;font-weight:500;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;transition:background .15s}
+.btn-save:hover{background:#d9ff5a}
+.btn-open{font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;background:transparent;color:var(--muted);border:1px solid var(--border);cursor:pointer;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;transition:all .15s}
+.btn-open:hover{border-color:var(--accent2);color:var(--accent2)}
+main{padding:32px 40px;max-width:1200px}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.sec-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:700}
+.sec-title span{color:var(--accent)}
+.btn{font-family:'DM Mono',monospace;font-size:12px;padding:10px 18px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;transition:all .15s;letter-spacing:.05em;text-transform:uppercase}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-a{background:var(--accent);color:#0e0f0f;border-color:var(--accent);font-weight:500}
+.btn-a:hover{background:#d9ff5a;color:#0e0f0f;border-color:#d9ff5a}
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{padding:12px 16px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);border-bottom:1px solid var(--border);background:var(--surface2);font-weight:500;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--surface2)}
+td{padding:11px 16px}
+td.num{color:var(--accent);font-size:13px}
+td.mut{color:var(--muted);font-size:11px}
+.badge{display:inline-block;padding:2px 8px;font-size:10px;border:1px solid;letter-spacing:.05em}
+.bc{border-color:var(--accent);color:var(--accent)}
+.bp{border-color:var(--accent2);color:var(--accent2)}
+.bf{border-color:var(--accent3);color:var(--accent3)}
+.bk{border-color:var(--accent4);color:var(--accent4)}
+.form-row{display:flex;gap:12px;margin-top:16px;align-items:flex-end;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:100px}
+.field label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.field input,.field select{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:10px 12px;outline:none;transition:border-color .15s;width:100%}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.field input::placeholder{color:var(--muted)}
+select option{background:var(--surface2)}
+.date-nav{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);padding:10px 16px;margin-bottom:20px;width:fit-content}
+.date-nav button{background:none;border:1px solid var(--border);color:var(--muted);font-size:14px;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.date-nav button:hover{border-color:var(--accent);color:var(--accent)}
+#cur-date{font-family:'Syne',sans-serif;font-size:15px;font-weight:600;min-width:210px;text-align:center}
+.day-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.sum-card{background:var(--surface);border:1px solid var(--border);padding:16px}
+.sum-card .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px}
+.sum-card .val{font-family:'Syne',sans-serif;font-size:24px;font-weight:700}
+.sum-card .unt{font-size:11px;color:var(--muted);margin-top:2px}
+.cc .val{color:var(--accent)}.cp .val{color:var(--accent2)}.cf .val{color:var(--accent3)}.ck .val{color:var(--accent4)}
+.chart-box{background:var(--surface);border:1px solid var(--border);padding:24px;position:relative;height:320px}
+.w-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.empty{padding:48px;text-align:center;color:var(--muted);font-size:13px}
+.empty .ico{font-size:32px;margin-bottom:12px;opacity:.4}
+.del-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:4px 6px;transition:color .15s}
+.del-btn:hover{color:var(--danger)}
+hr{border:none;border-top:1px solid var(--border);margin:24px 0}
+.info{font-size:11px;color:var(--muted);margin-top:8px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--accent);color:var(--accent);font-family:'DM Mono',monospace;font-size:12px;padding:12px 20px;z-index:9999;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none}
+.toast.on{opacity:1;transform:translateY(0)}
+@media(max-width:768px){main{padding:20px 16px}header{padding:0 16px;flex-wrap:wrap}.w-grid{grid-template-columns:1fr}.day-sum{grid-template-columns:repeat(2,1fr)}.tab-btn{padding:14px 10px;font-size:10px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Nutri<span>Log</span></div>
+  <nav>
+    <button class="tab-btn active" onclick="showTab('diary',this)">Diary</button>
+    <button class="tab-btn" onclick="showTab('foods',this)">Food Database</button>
+    <button class="tab-btn" onclick="showTab('summary',this)">Summary</button>
+    <button class="tab-btn" onclick="showTab('weight',this)">Weight</button>
+  </nav>
+  <div class="hdr-actions">
+    <label>
+      <button class="btn-open" onclick="document.getElementById('imp').click()">↑ Open File</button>
+      <input type="file" id="imp" accept=".html" style="display:none" onchange="importFile(event)">
+    </label>
+    <button class="btn-save" onclick="exportHTML()">↓ Save File</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- DIARY -->
+  <div class="tab-content active" id="tab-diary">
+    <div class="sec-hdr"><div class="sec-title">Nutrition <span>Diary</span></div></div>
+    <div class="date-nav">
+      <button onclick="changeDay(-1)">◀</button>
+      <div id="cur-date"></div>
+      <button onclick="changeDay(1)">▶</button>
+      <button class="btn" style="font-size:10px;padding:5px 10px" onclick="goToday()">Today</button>
+    </div>
+    <div class="day-sum">
+      <div class="sum-card cc"><div class="lbl">Calories</div><div class="val" id="dc">0</div><div class="unt">kcal</div></div>
+      <div class="sum-card cp"><div class="lbl">Protein</div><div class="val" id="dp">0</div><div class="unt">g</div></div>
+      <div class="sum-card cf"><div class="lbl">Fat</div><div class="val" id="df">0</div><div class="unt">g</div></div>
+      <div class="sum-card ck"><div class="lbl">Carbs</div><div class="val" id="dk">0</div><div class="unt">g</div></div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Food</th><th>Grams</th><th><span class="badge bc">kcal</span></th><th><span class="badge bp">protein</span></th><th><span class="badge bf">fat</span></th><th><span class="badge bk">carbs</span></th><th>Meal</th><th></th></tr></thead>
+        <tbody id="diary-body"></tbody>
+      </table>
+    </div>
+    <div class="form-row">
+      <div class="field" style="flex:2;min-width:180px"><label>Food</label><select id="d-food"><option value="">— select a food —</option></select></div>
+      <div class="field" style="max-width:120px"><label>Grams</label><input id="d-grams" type="number" placeholder="200" min="1"></div>
+      <div class="field" style="max-width:150px"><label>Meal</label>
+        <select id="d-meal"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option></select>
+      </div>
+      <button class="btn btn-a" onclick="addEntry()">+ Log</button>
+    </div>
+    <p class="info">* Select a food and grams. Press Enter in the grams field for quick logging.</p>
+  </div>
+
+  <!-- FOOD DATABASE -->
+  <div class="tab-content" id="tab-foods">
+    <div class="sec-hdr"><div class="sec-title">Food <span>Database</span></div></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Name</th><th><span class="badge bc">kcal</span> /100g</th><th><span class="badge bp">protein</span> /100g</th><th><span class="badge bf">fat</span> /100g</th><th><span class="badge bk">carbs</span> /100g</th><th></th></tr></thead>
+        <tbody id="foods-body"></tbody>
+      </table>
+    </div>
+    <div class="form-row">
+      <div class="field" style="min-width:180px;flex:2"><label>Food name</label><input id="f-name" type="text" placeholder="Chicken breast..."></div>
+      <div class="field"><label>Calories</label><input id="f-cal" type="number" placeholder="165" min="0" step="0.1"></div>
+      <div class="field"><label>Protein, g</label><input id="f-prot" type="number" placeholder="31" min="0" step="0.1"></div>
+      <div class="field"><label>Fat, g</label><input id="f-fat" type="number" placeholder="3.6" min="0" step="0.1"></div>
+      <div class="field"><label>Carbs, g</label><input id="f-carb" type="number" placeholder="0" min="0" step="0.1"></div>
+      <button class="btn btn-a" onclick="addFood()">+ Add</button>
+    </div>
+    <p class="info">* All values are per 100 grams of product</p>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="tab-content" id="tab-summary">
+    <div class="sec-hdr"><div class="sec-title">Daily <span>Summary</span></div></div>
+    <div class="tbl-wrap" style="margin-bottom:24px">
+      <table>
+        <thead><tr><th>Date</th><th><span class="badge bc">kcal</span></th><th><span class="badge bp">protein</span>, g</th><th><span class="badge bf">fat</span>, g</th><th><span class="badge bk">carbs</span>, g</th></tr></thead>
+        <tbody id="sum-body"></tbody>
+      </table>
+    </div>
+    <div class="chart-box"><canvas id="sum-chart"></canvas></div>
+  </div>
+
+  <!-- WEIGHT -->
+  <div class="tab-content" id="tab-weight">
+    <div class="sec-hdr"><div class="sec-title">Weight <span>Tracking</span></div></div>
+    <div class="w-grid">
+      <div>
+        <div class="tbl-wrap" style="max-height:420px;overflow-y:auto">
+          <table>
+            <thead><tr><th>Date</th><th>Weight, kg</th><th></th></tr></thead>
+            <tbody id="w-body"></tbody>
+          </table>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>Date</label><input id="w-date" type="date"></div>
+          <div class="field"><label>Weight, kg</label><input id="w-kg" type="number" placeholder="75.0" step="0.1" min="1"></div>
+          <button class="btn btn-a" onclick="addWeight()">+ Log</button>
+        </div>
+      </div>
+      <div><div class="chart-box"><canvas id="w-chart"></canvas></div></div>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════ DATA (replaced on export) ══════════════════════
+var SAVED = {"foods":[],"diary":{},"weights":[]};
+// ═════════════════════════════════════════════════════════════════════════════
+
+var S;
+var curDate = new Date();
+curDate.setHours(0,0,0,0);
+var sChart = null, wChart = null;
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+function init() {
+  var ls = null;
+  try { var r = localStorage.getItem('nl3_en'); if(r) ls = JSON.parse(r); } catch(e){}
+
+  var savedHasData = SAVED && (
+    (SAVED.foods && SAVED.foods.length > 0) ||
+    (SAVED.diary && Object.keys(SAVED.diary).length > 0) ||
+    (SAVED.weights && SAVED.weights.length > 0)
+  );
+
+  if (savedHasData && ls) {
+    S = {
+      foods: mergeByKey(SAVED.foods||[], ls.foods||[], 'name'),
+      diary: Object.assign({}, ls.diary||{}, SAVED.diary||{}),
+      weights: mergeByKey(SAVED.weights||[], ls.weights||[], 'date')
+    };
+  } else if (savedHasData) {
+    S = deepCopy(SAVED);
+  } else if (ls) {
+    S = ls;
+  } else {
+    S = {foods:[], diary:{}, weights:[]};
+  }
+
+  fixKeys();
+  save();
+}
+
+function fixKeys() {
+  if (!Array.isArray(S.foods)) S.foods = [];
+  if (!S.diary || typeof S.diary !== 'object') S.diary = {};
+  if (!Array.isArray(S.weights)) S.weights = [];
+}
+
+function save() {
+  try { localStorage.setItem('nl3_en', JSON.stringify(S)); } catch(e){}
+}
+
+function deepCopy(o) { return JSON.parse(JSON.stringify(o)); }
+
+function mergeByKey(a, b, key) {
+  var map = {};
+  (b||[]).forEach(function(x){ map[x[key]] = x; });
+  (a||[]).forEach(function(x){ map[x[key]] = x; });
+  return Object.values(map);
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+var tTimer;
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('on');
+  clearTimeout(tTimer);
+  tTimer = setTimeout(function(){ el.classList.remove('on'); }, 2500);
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function dk(d) {
+  return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
+}
+function p2(n){ return n<10?'0'+n:String(n); }
+function fmtLong(d) {
+  return d.toLocaleDateString('en-US',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
+}
+function fmtShort(s) {
+  var p=s.split('-'); return p[2]+'.'+p[1]+'.'+p[0];
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function dayTotals(key) {
+  return (S.diary[key]||[]).reduce(function(a,e){
+    return {cal:a.cal+e.cal,prot:a.prot+e.prot,fat:a.fat+e.fat,carb:a.carb+e.carb};
+  },{cal:0,prot:0,fat:0,carb:0});
+}
+
+// ─── TABS ────────────────────────────────────────────────────────────────────
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('active');});
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('tab-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(name==='diary') renderDiary();
+  if(name==='foods') renderFoods();
+  if(name==='summary') renderSummary();
+  if(name==='weight') renderWeight();
+}
+
+// ─── FOOD DATABASE ───────────────────────────────────────────────────────────
+function renderFoods() {
+  var b = document.getElementById('foods-body');
+  if(!S.foods.length){
+    b.innerHTML='<tr><td colspan="6"><div class="empty"><div class="ico">&#x1F957;</div>Add your first food</div></td></tr>';
+    return;
+  }
+  b.innerHTML = S.foods.map(function(f,i){
+    return '<tr><td><strong>'+esc(f.name)+'</strong></td>'
+      +'<td class="num">'+f.cal+'</td><td class="num">'+f.prot+'</td>'
+      +'<td class="num">'+f.fat+'</td><td class="num">'+f.carb+'</td>'
+      +'<td><button class="del-btn" onclick="delFood('+i+')" title="Delete">&#x2715;</button></td></tr>';
+  }).join('');
+}
+
+function addFood() {
+  var name = document.getElementById('f-name').value.trim();
+  var cal  = parseFloat(document.getElementById('f-cal').value);
+  var prot = parseFloat(document.getElementById('f-prot').value);
+  var fat  = parseFloat(document.getElementById('f-fat').value);
+  var carb = parseFloat(document.getElementById('f-carb').value);
+  if(!name){alert('Enter the food name');return;}
+  if(isNaN(cal)||isNaN(prot)||isNaN(fat)||isNaN(carb)){alert('Fill in all macro fields');return;}
+  S.foods.push({name:name,cal:cal,prot:prot,fat:fat,carb:carb});
+  save(); renderFoods(); updateSel();
+  ['f-name','f-cal','f-prot','f-fat','f-carb'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('f-name').focus();
+  toast('\u2713 '+name+' added');
+}
+
+function delFood(i) {
+  if(!confirm('Delete "'+S.foods[i].name+'"?'))return;
+  var name = S.foods[i].name;
+  S.foods.splice(i,1);
+  save(); renderFoods(); updateSel();
+  toast('Deleted: '+name);
+}
+
+// ─── DIARY ───────────────────────────────────────────────────────────────────
+function updateSel() {
+  var sel = document.getElementById('d-food');
+  var cur = sel.value;
+  sel.innerHTML = '<option value="">\u2014 select a food \u2014</option>';
+  S.foods.forEach(function(f){
+    var o = document.createElement('option');
+    o.value = f.name;
+    o.textContent = f.name+' ('+f.cal+' kcal)';
+    sel.appendChild(o);
+  });
+  if(cur && S.foods.find(function(f){return f.name===cur;})) sel.value=cur;
+}
+
+function renderDiary() {
+  document.getElementById('cur-date').textContent = fmtLong(curDate);
+  updateSel();
+  var key = dk(curDate);
+  var entries = S.diary[key]||[];
+  var b = document.getElementById('diary-body');
+  if(!entries.length){
+    b.innerHTML='<tr><td colspan="9"><div class="empty"><div class="ico">&#x1F37D;</div>No entries for this day</div></td></tr>';
+  } else {
+    b.innerHTML = entries.map(function(e,i){
+      return '<tr>'
+        +'<td class="mut">'+(i+1)+'</td>'
+        +'<td><strong>'+esc(e.foodName)+'</strong></td>'
+        +'<td>'+e.grams+' g</td>'
+        +'<td class="num">'+e.cal.toFixed(0)+'</td>'
+        +'<td class="num">'+e.prot.toFixed(1)+'</td>'
+        +'<td class="num">'+e.fat.toFixed(1)+'</td>'
+        +'<td class="num">'+e.carb.toFixed(1)+'</td>'
+        +'<td class="mut" style="font-size:10px">'+esc(e.meal||'')+'</td>'
+        +'<td><button class="del-btn" onclick="delEntry(\''+key+'\','+i+')" title="Delete">&#x2715;</button></td>'
+        +'</tr>';
+    }).join('');
+  }
+  var t = dayTotals(key);
+  document.getElementById('dc').textContent = t.cal.toFixed(0);
+  document.getElementById('dp').textContent = t.prot.toFixed(1);
+  document.getElementById('df').textContent = t.fat.toFixed(1);
+  document.getElementById('dk').textContent = t.carb.toFixed(1);
+}
+
+function addEntry() {
+  var fn   = document.getElementById('d-food').value;
+  var g    = parseFloat(document.getElementById('d-grams').value);
+  var meal = document.getElementById('d-meal').value;
+  if(!fn){alert('Select a food');return;}
+  if(isNaN(g)||g<=0){alert('Enter grams');return;}
+  var food = S.foods.find(function(f){return f.name===fn;});
+  if(!food){alert('Food not found in database');return;}
+  var r = g/100;
+  var key = dk(curDate);
+  if(!S.diary[key]) S.diary[key]=[];
+  S.diary[key].push({foodName:fn,grams:g,cal:food.cal*r,prot:food.prot*r,fat:food.fat*r,carb:food.carb*r,meal:meal});
+  save(); renderDiary();
+  document.getElementById('d-food').value='';
+  document.getElementById('d-grams').value='';
+  toast('\u2713 '+fn+' '+g+'g');
+}
+
+function delEntry(key,i) {
+  if(!S.diary[key])return;
+  var name = S.diary[key][i]?S.diary[key][i].foodName:'';
+  S.diary[key].splice(i,1);
+  if(!S.diary[key].length) delete S.diary[key];
+  save(); renderDiary();
+  if(name) toast('Deleted: '+name);
+}
+
+function changeDay(d){ curDate.setDate(curDate.getDate()+d); renderDiary(); }
+function goToday(){ curDate=new Date(); curDate.setHours(0,0,0,0); renderDiary(); }
+
+// ─── SUMMARY ─────────────────────────────────────────────────────────────────
+function renderSummary() {
+  var days = Object.keys(S.diary).sort();
+  var b = document.getElementById('sum-body');
+  if(!days.length){
+    b.innerHTML='<tr><td colspan="5"><div class="empty"><div class="ico">&#x1F4CA;</div>No data</div></td></tr>';
+    if(sChart){sChart.destroy();sChart=null;} return;
+  }
+  var rows = days.map(function(d){return Object.assign({date:d},dayTotals(d));});
+  b.innerHTML = rows.map(function(r){
+    return '<tr><td>'+fmtShort(r.date)+'</td>'
+      +'<td class="num">'+r.cal.toFixed(0)+'</td>'
+      +'<td class="num">'+r.prot.toFixed(1)+'</td>'
+      +'<td class="num">'+r.fat.toFixed(1)+'</td>'
+      +'<td class="num">'+r.carb.toFixed(1)+'</td></tr>';
+  }).join('');
+  var ctx = document.getElementById('sum-chart');
+  if(sChart) sChart.destroy();
+  sChart = new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:rows.map(function(r){return fmtShort(r.date);}),
+      datasets:[
+        {label:'Calories',data:rows.map(function(r){return r.cal.toFixed(0);}),borderColor:'#c8f542',backgroundColor:'#c8f54215',tension:.3,pointBackgroundColor:'#c8f542'},
+        {label:'Protein',data:rows.map(function(r){return r.prot.toFixed(1);}),borderColor:'#42f5c8',backgroundColor:'#42f5c815',tension:.3,pointBackgroundColor:'#42f5c8'},
+        {label:'Fat',data:rows.map(function(r){return r.fat.toFixed(1);}),borderColor:'#f5a742',backgroundColor:'#f5a74215',tension:.3,pointBackgroundColor:'#f5a742'},
+        {label:'Carbs',data:rows.map(function(r){return r.carb.toFixed(1);}),borderColor:'#f542a7',backgroundColor:'#f542a715',tension:.3,pointBackgroundColor:'#f542a7'}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#e8eaea',font:{family:'DM Mono',size:11},boxWidth:12}}},
+      scales:{
+        x:{ticks:{color:'#6b7070',font:{family:'DM Mono',size:10}},grid:{color:'#2a2d2d'}},
+        y:{ticks:{color:'#6b7070',font:{family:'DM Mono',size:10}},grid:{color:'#2a2d2d'}}
+      }
+    }
+  });
+}
+
+// ─── WEIGHT ──────────────────────────────────────────────────────────────────
+function renderWeight() {
+  var sorted = [].concat(S.weights).sort(function(a,b){return b.date.localeCompare(a.date);});
+  var b = document.getElementById('w-body');
+  if(!sorted.length){
+    b.innerHTML='<tr><td colspan="3"><div class="empty"><div class="ico">&#x2696;&#xFE0F;</div>No weight data</div></td></tr>';
+    if(wChart){wChart.destroy();wChart=null;} return;
+  }
+  b.innerHTML = sorted.map(function(w){
+    return '<tr><td>'+fmtShort(w.date)+'</td><td class="num">'+w.kg+'</td>'
+      +'<td><button class="del-btn" onclick="delWeight(\''+w.date+'\')" title="Delete">&#x2715;</button></td></tr>';
+  }).join('');
+  var cd = [].concat(S.weights).sort(function(a,b){return a.date.localeCompare(b.date);});
+  var vals = cd.map(function(w){return w.kg;});
+  var ctx = document.getElementById('w-chart');
+  if(wChart) wChart.destroy();
+  wChart = new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:cd.map(function(w){return fmtShort(w.date);}),
+      datasets:[{label:'Weight (kg)',data:vals,borderColor:'#c8f542',backgroundColor:'#c8f54215',tension:.3,pointBackgroundColor:'#c8f542',pointRadius:5,fill:true}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#e8eaea',font:{family:'DM Mono',size:11}}}},
+      scales:{
+        x:{ticks:{color:'#6b7070',font:{family:'DM Mono',size:10}},grid:{color:'#2a2d2d'}},
+        y:{ticks:{color:'#6b7070',font:{family:'DM Mono',size:10}},grid:{color:'#2a2d2d'},
+          suggestedMin:Math.min.apply(null,vals)-2,suggestedMax:Math.max.apply(null,vals)+2}
+      }
+    }
+  });
+}
+
+function addWeight() {
+  var date = document.getElementById('w-date').value;
+  var kg   = parseFloat(document.getElementById('w-kg').value);
+  if(!date){alert('Select a date');return;}
+  if(isNaN(kg)||kg<=0){alert('Enter weight');return;}
+  var ex = S.weights.find(function(w){return w.date===date;});
+  if(ex){ex.kg=kg;}else{S.weights.push({date:date,kg:kg});}
+  save(); renderWeight();
+  document.getElementById('w-kg').value='';
+  toast('\u2713 Weight '+kg+' kg logged');
+}
+
+function delWeight(date) {
+  if(!confirm('Delete this weight entry?'))return;
+  S.weights = S.weights.filter(function(w){return w.date!==date;});
+  save(); renderWeight();
+}
+
+// ─── EXPORT ──────────────────────────────────────────────────────────────────
+function exportHTML() {
+  var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  var newSaved = 'var SAVED = ' + JSON.stringify(S) + ';';
+  html = html.replace(/var SAVED = \{[\s\S]*?\};/, newSaved);
+  var blob = new Blob([html], {type:'text/html;charset=utf-8'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url;
+  a.download = 'nutrilog_' + dk(new Date()) + '.html';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); a.parentNode.removeChild(a); }, 300);
+  toast('\u2713 File saved');
+}
+
+// ─── IMPORT ──────────────────────────────────────────────────────────────────
+function importFile(ev) {
+  var file = ev.target.files[0];
+  if(!file)return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var txt = e.target.result;
+    var found = null;
+    var m = txt.match(/var SAVED = (\{[\s\S]*?\});/);
+    if(m){try{found=JSON.parse(m[1]);}catch(er){}}
+    if(!found){
+      var m2 = txt.match(/const _savedState = (\{[\s\S]*?\});/);
+      if(m2){try{found=JSON.parse(m2[1]);}catch(er){}}
+    }
+    if(!found){alert('No data found in file.\nMake sure this is a NutriLog file.');ev.target.value='';return;}
+    var merge = confirm(
+      'Data found:\n'
+      +'  Foods: '+((found.foods||[]).length)+'\n'
+      +'  Diary days: '+Object.keys(found.diary||{}).length+'\n'
+      +'  Weight entries: '+((found.weights||[]).length)+'\n\n'
+      +'OK = merge with current data\n'
+      +'Cancel = fully replace data'
+    );
+    if(merge){
+      (found.foods||[]).forEach(function(f){
+        if(!S.foods.find(function(x){return x.name===f.name;})) S.foods.push(f);
+      });
+      Object.assign(S.diary, found.diary||{});
+      (found.weights||[]).forEach(function(w){
+        if(!S.weights.find(function(x){return x.date===w.date;})) S.weights.push(w);
+      });
+    } else {
+      S = {
+        foods:found.foods||[],
+        diary:found.diary||{},
+        weights:found.weights||[]
+      };
+    }
+    save();
+    renderDiary(); renderFoods();
+    toast('\u2713 Data loaded from file');
+    ev.target.value='';
+  };
+  reader.readAsText(file,'utf-8');
+}
+
+// ─── KEYS ────────────────────────────────────────────────────────────────────
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'){
+    if(document.activeElement.id==='d-grams') addEntry();
+    if(document.activeElement.id==='f-carb')  addFood();
+    if(document.activeElement.id==='w-kg')    addWeight();
+  }
+});
+
+// ─── START ───────────────────────────────────────────────────────────────────
+init();
+document.getElementById('w-date').value = dk(new Date());
+renderDiary();
+renderFoods();
+</script>
+
+</body></html>
